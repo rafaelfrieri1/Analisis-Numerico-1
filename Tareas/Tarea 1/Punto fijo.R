@@ -1,4 +1,4 @@
-#Remueve los objetos del entorno
+#Remueve los objetos del entorn
 remove(list=ls())
 
 puntoFijo<-function(a,b,x0){ #Se declara la función de punto fijo con un x0 inicial arbitrario
