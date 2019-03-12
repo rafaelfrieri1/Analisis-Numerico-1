@@ -1,4 +1,5 @@
-require(PolynomF)
+library(PolynomF)
+library(Matrix)
 # Parte A (gráficas y resultados estimados) y B (polinomios ajustados) (más los otros requisitos pedidos en clase) del ejercicio están organizados en el código
 x = c(6,8,10,12,14,16,18,20)
 y = c(8.5,9.2,12.7,18.4,21.6,17.9,11,9)
