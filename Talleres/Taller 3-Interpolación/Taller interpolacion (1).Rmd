@@ -1,0 +1,448 @@
+---
+title: "Taller Interpolación"
+output: html_notebook
+---
+
+1.Dados n+1 nodos distintos, demuestre que el polinomio interpolante es único.
+
+Supongamos que se tienen n+1 puntos para interpolar un polinomio P(x) que es máximo de grado n. Supongamos luego que existe otro polinomio de grado n que se interpola con los mismos n+1 puntos q(x). Luego consideramos un polinomio r(x)=p(x)-q(x). Luego se conocen 3 características de r:
+
+	r(x) es un polinomio también.
+	El máximo grado de r(x) es n debido a que es una resta de polinomios cuyo grado máximo es n.
+	Si q(x) y p(x) pasan or los n+1 puntos, luego r(Xi)=p(Xi)-q(Xi)=Yi-Yi=0. Luego r(x) tiene n+1 raíces.
+Luego si r(x) es un polinomio de máximo grado n esto no es posible por lo cual se llega a una contradicción. Lo que quiere decir que p(x) y q(x) son iguales. Por otro lado si r(x) fuera un polinomio distinto de 0 debería poderse escribir de la siguiente forma: 
+
+r(x)=A(x-x_0 )(x-x_1 )…(x-x_n)
+
+Siendo A una constante. Luego si dicho polinomio tiene n+1 raices, se llegará al término Axn+1, es decir un grado mayor al establecido. Luego la única forma en que r(x) existe es si A es igual a 0, lo que equivale a r(x)=0. Luego:
+
+r(x)=0=p(x)-q(x)⟹p(x)=q(x)
+
+Luego q(x) es un polinomio idéntico a p(x), lo que significa que para un conjunto de n+1 puntos el polinomio interpolante es único.
+
+
+2.Considere el comportamiento de gases no ideales se describe a menudo con la ecuación virial de estado.
+los siguientes datos para el nitrógeno :
+T(K) 100 200 300 400 450 500 600
+B(cm3/mol) �160 �35 �4.2 9.0 ? 16.9 21.3
+
+
+a. Determine un polinomio interpolante para este caso(escriba el polinomio)
+b. Utilizando el resultado anterior calcule el segundo y tercer coeficiente virial a 450K
+c. Grafique los puntos y el polinomio que ajusta
+d. Utilice la interpolación de Lagrange y escriba el polinomio interpolante
+e. Grafique los puntos y el polinomio interpolante de Lagrange
+f. ¿Cuál es el segundo y tercer coeficiente virial a 450K?. con el método de Lagrange
+g. Compare su resultado con la serie truncada (modelo teórico), cuál de las tres
+aproximaciones es mejor por qué?
+
+```{r}
+library(PolynomF)
+options(digits=7)
+options(nsmall=22)
+# Para la expresión que contiene a B y C se despeja B para hallar el polinomio interpolante.
+# El polinomio resultante al despejar B fue: (PV^2)/(RT)-V-C(T)/V=B(T)
+
+# Parte A
+temp=c(100,200,300,400,500,600)
+B=c(-160,-35,-4.2,9,16.9,21.3)
+# Se interpola un polinomio de grado 3, sin tener en cuenta el primer y segundo punto de la interpolación, debido a que tienen cierto comportamiento inusual y genera error en la interpolación.
+
+polyAjuste=poly.calc(temp[3:6],B[3:6])
+
+# El resultado será: P(x)=-93.6+0.4585*x-0.000625*x^2+0.0000003*x^3
+
+# Parte B
+
+B450k=polyAjuste(450)
+B450k
+
+# El resultado de B a 450k es de 13.5 cm^3/mol
+
+# Luego reemplazando en 2 puntos y sabiendo que la constante R es 82,05 para las unidades utilizadas,
+# Se encontraron la presión y el volumen que son -550,251 y -48,6, esto utilizando la aproximación de dos términos
+# o serie truncada del sistema. Reemplazando dichos valores y ya conociendo B en 450k, se encuentra el valor de C a 450k
+
+C450k=4.731021
+
+# El resultado de C a 450k es de 4.731021 (cm^3/mol)^2
+
+# Parte C
+
+# Se grafican los puntos con los que se interpola
+plot(temp[3:6],B[3:6],cex=1,pch=19,col="red")
+
+xi=seq(0,700,0.1)
+yi=polyAjuste(xi)
+# Se grafica resultado de polinomio interpolado
+lines(xi,yi,col="blue",cex=2)
+
+# Parte D
+
+# Se obtuvo el siguiente polinomio interpolante
+
+f2=function(x){3e-7*x^3-0.000625*x^2+0.4585*x-93.6}
+
+# Que es el mismo polinomio calculado en la parte A, como se dice en la introducción del capítulo
+
+# El resultado será: P(x)=-93.6+0.4585*x-0.000625*x^2+0.0000003*x^3
+
+# Parte E
+
+# Los puntos para interpolar son los mismos, luego solo se grafica la nueva función interpolante de color verde
+
+xi=seq(0,700,0.1)
+yi=f2(xi)
+
+# Se grafica resultado de polinomio interpolado
+
+lines(xi,yi,col="green",cex=2)
+
+# Se observa fácilmente que las gráficas son altamente parecidas, en realidad, iguales
+
+# Parte F
+
+B450k2=f2(450)
+B450k2
+
+# El resultado de B a 450k con el polinomio interpolante de Lagrange fue de 13,5 cm^3/mol, como con el polinomio anterior
+
+# Si el resultado de B es igual a el resultado con el polinomio anterior, y el polinomio anterior es igual al nuevo
+# luego C tendrá el mismo valor, luego
+
+C450k2=4.731021
+
+# El resultado de C a 450k con el polinomio interpolante de Lagrange fue de 4.731021 (cm^3/mol)^2, como con el polinomio anterior
+
+# Resultado exactamente igual al encontrado en la parte B del ejercicio
+
+```
+
+
+Solución punto d. 
+
+Se calcula el polinomio interpolante con Lagrange, que tiene la forma:
+
+Pn (x)=y0 L(n,0) (x)+y1 L(n,1) (x)+⋯+ynL(n,n) (x)
+
+Con los datos dados en el problema (removiendo los puntos que introducen error) se llega a la siguiente expresión luego de simplificar los denominadores de los coeficientes de Lagrange:
+
+
+P_n (x)=7*10^(-7)*∑_(i=2,i≠2)^5▒(x-x_i ) +4,5*10^(-6)*∑_(i=2,i≠3)^5▒(x-x_i ) -8,45*10^(-6)*∑_(i=2,i≠4)^5▒(x-x_i ) +3,55*10^(-6)*∑_(i=2,i≠5)^5▒(x-x_i ) 
+El resultado del polinomio interpolante por Lagrange es:
+
+P_n (x)=3*10^(-7) x^3-0,000625x^2+0,4585x-93,6
+
+
+Que es el mismo polinomio obtenido en la parte A.
+
+Solución punto g.
+
+"El modelo que mejor se aproxima al comportamiento es el de los polinomios interpolantes tanto el de Lagrange, como el calculado de forma clásica (que son iguales), debido a que estos son generados a partir de comportamientos experimentales de un sistema físico y por tanto tienen en cuenta todas las variables físicas al momento de realizar la interpolación mientras que en el modelo truncado se obvian todos los términos que están sobre V^2 en adelante, posiblemente porque estos pueden llegar a ser despreciables, sin embargo se dejan de tener en cuenta, lo que no sucede con el polinomio interpolante, luego realiza una mejor aproximación que el modelo truncado."
+
+3. Sea 𝑓(𝑥) =e^x en el intervalo [0,1] �𝑥en el intervalo [0,1]
+a. Tabular varios puntos y grafíquelos
+b. Interpolar con el método de Lagrange,
+c. Utilizando 8 cifras decimales o más, en cada entrada, determine el tamaño
+del paso que me produzca un error por debajo de 10−6
+
+```{r}
+library(Matrix)
+library(PolynomF)
+f<- function(x){exp(x)}
+x<-c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)
+plot(x,f(x),pch=19, cex=1, col = "pink", asp=1)
+curve(f(x),add=T,from=0, to=21)
+print(f(x))
+#Funccion lagrange
+lagrange = function(x,y,a){
+  n = length(x)
+  if(a < min(x) || max(x) < a) stop("No está interpolando")
+  X  = matrix(rep(x, times=n), n, n, byrow=T)
+  mN = a - X;    diag(mN) = 1
+  mD = X - t(X); diag(mD) = 1
+  Lnk = apply(mN, 1, prod)/apply(mD, 2, prod)
+  sum(y*Lnk)
+}
+x<-c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)
+#print(f(x))
+y<-c(1.000000, 1.105171, 1.221403, 1.349859, 1.491825, 1.648721, 1.822119, 2.013753, 2.225541, 2.459603, 2.718282)
+datox=x[1:11]
+datoy=y[1:11]
+polyAjuste = poly.calc(datox,datoy)
+polyAjuste
+#0.997597 + 1.024583*x + 0.417*x^2 + 0.2761667*x^3, polinomio interpolante con método de Lagrange
+plot(datox,datoy, pch=19, cex=1, col = "red", asp=1) 
+curve(polyAjuste,add=T,from=0, to=21)
+
+print("Lagrange para 1 (valor más alto del vector escojido)")
+print(lagrange(x,y,1)) 
+
+#Error
+
+tamx<-11
+derivadaf<-function(x){exp(x)}
+factorial<-tamx+1
+
+cotaError<-function(x1){
+  res=derivadaf(x1)/factorial
+  multi=1
+  for(i in tamx)
+    multi=multi*(x1-x[i])
+  final=multi*res
+  print(final) # Paso necesario en nodos igualmente espaciados para error máximo de 10^-6, utilizando la ecuación demostrada en el punto 5
+}
+cotaError(1.5)
+#http://interpolacion.wikidot.com/lag-teoria
+```
+
+4.En la tabla que sigue aparece las estadísticas de un curso con la cantidad de
+estudiantes en cada rango de notas.
+Rango de Notas 30-40 40-50 50-60 60-70 70-80
+No Estudiantes 35 48 70 40 22
+a. Estime la cantidad de estudiantes con nota menor o igual a 55.Utilice un ajuste
+polinómico
+b. Estime la canntidad de estudiantes con nota menor o igual a 55.Utilice un ajuste de
+Lagrange
+
+```{r}
+#Punto 4
+library(Matrix)
+library(PolynomF)
+# Se realiza tabla de frecuencias acumuladas para poder calcular cantidad de estudiantes dentro de un rango
+x<-c(40,50,60,70,80)
+y<-c(35,83,153,193,215)
+
+lagrange = function(x,y,a){
+  n = length(x)
+  if(a < min(x) || max(x) < a) stop("No está interpolando")
+  X  = matrix(rep(x, times=n), n, n, byrow=T)
+  mN = a - X;    diag(mN) = 1
+  mD = X - t(X); diag(mD) = 1
+  Lnk = apply(mN, 1, prod)/apply(mD, 2, prod)
+  sum(y*Lnk)
+}
+
+# Se encuentra cantidad de estudiantes con nota menor o igual a 55 con Lagrange
+k<-lagrange(x,y,55)
+print("Usando lagrange:")
+print(k)
+
+datox=x[1:5]
+datoy=y[1:5]
+polyAjuste = poly.calc(datox,datoy)
+polyAjuste
+
+# Se encuentra cantidad de estudiantes con nota menor o igual a 55 con polinomio interpolante
+fAjustada<-function(x){3343 - 239.3667*x + 6.183333*x^2 - 0.06733333*x^3 + 0.0002666667*x^4 }
+rF<-fAjustada(55)
+
+print("PolyAjuste ≤ 55:")
+print(rF)
+```
+
+Los resultados son prácticamente iguales, debido a que con los diferentes métodos se llegará siempre al mismo polinomio interpolante. (Cambios por aproximaciones)
+
+5. Considere la función f(x)=1/(1+x^2 ) conocida en el interval [-1,1] y una partición de la forma x_i=cosa( (2(n-i)+1)/(2n+2) π ), i=0,1,2,…,n. Demuestre que para un valor en el interval se tiene que:
+
+|f(x^* )-P_n (x^* )|≤M/(n+1)!*1/2^n   si |f^((n+1) ) (x)|≤M para todo x∈[a,b].
+
+Se considera que f(x) es la función (se conoce junto con sus derivadas) que se desea interpolar y P(x) es el polinomio interpolante de f(x). Donde f∈C^(n+1) [a,b] y Pn(x) interpola en (x0,y0), (x1,y1),…(xn,yn), x_i∈[a,b]. Luego se sabe que el error del polinomio interpolante respecto la función original es :
+
+Error=f(x)-P_n (x)
+
+Luego utilizando series de Taylor (polinomios de Taylor) se llega a la siguiente expresión del error:
+
+f(x)-P_n (x)=(f^((n+1) ) (ξ(x)))/(n+1)! (x-x_0 )(x-x_1 )…(x-x_n)
+
+Luego se supone que el término f^((n+1) ) (ξ(x)) tiene una cota o un máximo absoluto que se denominará M en el interval [a,b] donde a y b son el mínimo y máximo del conjunto de valores {x_0,x_1,…,x_n} respectivamente. Además la función ξ(x) está contenida en el intervalo [a,b] para cumplir con dicha declaración y depende de x debido a que no es constante. Luego se debe cumplir lo siguiente para la magnitud del error:
+
+|f(x)-P_n (x)|≤M/(n+1)! |(x-x_0 )(x-x_1 )…(x-x_n )|;x∈[a,b]
+
+Se sabe que el polinomio dado por Q_(n+1)=(x-x_0 )(x-x_1 )…(x-x_n ) es mónico, es decir que el coeficiente que acompaña a xn es 1.  Luego si el polinomio es mónico existe un teorema que establece que:
+
+|Q_(n+1) |≥2^(-n)
+
+Luego si se divide por el valor mínimo del polinomio se obtiene el mayor error, esto significa que:
+
+|f(x)-P_n (x)|≤M/(n+1)!*1/2^(-(-n)) ;x∈[a,b]
+
+
+|f(x)-P_n (x)|≤M/(n+1)!*1/2^n ;x∈[a,b]
+
+Luego se puede concluir que:
+
+
+|f(x^* )-P_n (x^* )|≤M/(n+1)!*1/2^n   si |f^((n+1) ) (x)|≤M para todo x∈[a,b].
+
+Siendo esta una estimación del error teniendo en cuenta las suposiciones expresadas anteriormente.
+
+6. Utilice el polinomio de Taylor para interpolar 𝑓(𝑥) = e^x, x0=0 y f(x)=1/x
+a. Implemente un código en R para la solución del problema con 5 cifras
+b. Escriba el polinomio resultante en cada caso
+c. Considera que el polinomio es un buen interpolador, justifique su respuesta
+
+```{r}
+library(pracma)
+options(digits=7)
+# Parte A
+
+# Se calculan los coeficientes de Taylor para e^x en X0=0 de orden 4, es decir con 5 coeficientes
+f1=function(x){exp(x)}
+
+coefsex=taylor(f1,x0=0,n=4)
+
+# Se calculan los coeficientes de Taylor para 1/x en X0=1 de orden 4, es decir con 5 coeficientes
+
+f2=function(x){1/x}
+
+coefsxinv=taylor(f2,x0=1,n=4)
+
+# Se guardan los polinomios en una función
+
+poltayex=function(x){coefsex[1]*x^4+coefsex[2]*x^3+coefsex[3]*x^2+coefsex[4]*x+coefsex[5]}
+
+poltayxinv=function(x){coefsxinv[1]*x^4+coefsxinv[2]*x^3+coefsxinv[3]*x^2+coefsxinv[4]*x+coefsxinv[5]}
+
+# Ambos polinomios tienen más de 5 cifras para cada coeficiente
+
+# Parte B
+
+# Se reescriben los polinomios resultantes de forma explícita dentro de las funciones
+
+# El polinomio de Taylor con 5 coeficientes para la función e^x es 0.04166657*x^4+0.16666673*x^3+0.5*x^2+x+1
+poltayex=function(x){0.04166657*x^4+0.16666673*x^3+0.5*x^2+x+1}
+
+# El polinomio de Taylor con 5 coeficientes para la función 1/x es 1.000029*x^4-5.000119*x^3+10.000182*x^2-10.000124*x+5.000032
+poltayxinv=function(x){1.000029*x^4-5.000119*x^3+10.000182*x^2-10.000124*x+5.000032}
+
+# Parte C
+
+"El polinomio de Taylor es un buen interpolador siempre que se use para evaluar puntos
+cercanos al número alrededor del cual se realizó el polinomio. Es decir en el caso presente
+para e^x es un buen interpolador en valores cercanos a 0 debido a que se hizo la serie
+alrededor de dicho punto, lejano a 0 comienza a distorsionar más el valor real, a pesar de
+que converja para cualquier x (si hiciera infinita). Para el caso de 1/x sucede igual solo que
+esta no converge en su serie infinita con cualquier valor de x, se debe cumplir que 
+|1-x|<1 para que tenga convergencia. A continuación se muestran casos de ambas funciones
+con un valor cercano y un valor lejano para mostrar el error respecto al valor real a medida
+que se aleja del punto al rededor del cual se hizo la aproximación."
+
+real1=exp(0.2)
+aprox1=poltayex(0.2)
+error1=(abs(real1-aprox1)/real1)*100
+real2=exp(5)
+aprox2=poltayex(5)
+error2=(abs(real2-aprox2)/real2)*100
+
+cat("El valor real de e^x en 0.2 es: ",real1,"mientras que el aproximado es de: ",aprox1,"con un error del: ",error1,"%\n")
+cat("El valor real de e^x en 5 es: ",real2,"mientras que el aproximado es de: ",aprox2,"con un error del: ",error2,"%\n\n")
+
+real1=1/0.9
+aprox1=poltayxinv(0.9)
+error1=(abs(real1-aprox1)/real1)*100
+real2=1/5
+aprox2=poltayxinv(5)
+error2=(abs(real2-aprox2)/real2)*100
+
+cat("El valor real de 1/x en 0.9 es: ",real1,"mientras que el aproximado es de: ",aprox1,"con un error del: ",error1,"%\n")
+cat("El valor real de 1/x en 5 es: ",real2,"mientras que el aproximado es de: ",aprox2,"con un error del: ",error2,"%\n\n")
+
+"Si se ven los resultados se puede observar que efectivamente aumenta el error a medida de que e^x
+se aleja de 0 y 1/x se aleja de 1, por lo tanto lo mencionado anteriormente es correcto."
+```
+
+7. Se desea aproximar la función 𝑡𝑎𝑛(𝑥) en el intervalo [-𝜋/2,𝜋/2].
+a. Considerar como nodos de interpolación los puntos xk=k., para k=0, ±1, ±2,
+±3, precisamente en este orden. Utilice una interpolación polinómica y escriba el
+polinomio resultante.
+b. Grafique por lo menos 10 puntos y el polinomio resultante
+c. Utilice el método de Lagrange 150 intervalos. ¿Cuál es el error máximo
+apreciado en la tabla de valores?
+d. Determine el  que minimice el error máximo. Explicar el procedimiento
+seguido en su determinación, y demuestre su resultado
+
+```{r}
+require(PolynomF)
+# Parte A
+
+# Se utilizará como alfa pi/6, luego utilizando k de -3 a 3 se obtiene el intervalo deseado con 7 puntos
+
+xi=seq(-pi/2,pi/2,pi/6)
+
+# Luego se calculará el polinomio interpolante con dichos puntos de prueba, pero antes se deben calcular los yi
+
+yi=tan(xi);
+
+# Para el cálculo del polinomio interpolante se remueven el primer y último y calculados ya que introducen mucho error
+# a la interpolación y son teóricamente indefinidos
+
+polyAjuste=poly.calc(xi[2:6],yi[2:6])
+
+# Luego el polinomio resultante es: Pn(x)=0.9188815*x + 0.6703356*x^3 
+
+# Parte B
+
+# Se grafican 21 puntos y el polinomio resultante
+
+xi2=seq(-pi/2,pi/2,pi/20)
+yi2=tan(xi2[2:20])
+yi2poly=polyAjuste(xi2[2:20])
+
+plot(xi2[2:20],yi2[2:20],cex=1,pch=19,col="red")
+
+lines(xi2[2:20],yi2poly[2:20],col="blue",cex=2)
+
+# Parte C
+
+# Se utiliza el método de Lagrange para la interpolación polinómica 
+# pero para un alfa menor y así obtener 150 intervalos, es decir 151 valores. Por lo tanto se hacen
+# 75 valores a cada lado. El nuevo alfa será de pi/150.
+
+xi=seq(-pi/2,pi/2,pi/150)
+yi=tan(xi)
+
+# Se declara la función para realizar interpolación polinómica por Lagrange
+lagrange = function(x,y,a){
+  n = length(x)
+  if(a < min(x) || max(x) < a) stop("No está interpolando")
+  X = matrix(rep(x, times=n), n, n, byrow=T)
+  mN = a - X; diag(mN) = 1
+  mD = X - t(X); diag(mD) = 1
+  Lnk = apply(mN, 1, prod)/apply(mD, 2, prod)
+  sum(y*Lnk)
+}
+
+# Se observa el valor de tan(x) en cada uno de los puntos graficados, y se compara con el polinomio interpolante de 150 intervalos para encontrar el error máximo
+cat("xi      ","tan(x)       ","poly150         ","error        \n")
+for(i in c(2:20)){
+  real=tan(xi2[i])
+  aprox=lagrange(xi,yi,xi2[i])
+  error=(abs(real-aprox)/abs(real))*100
+  cat(xi2[i]," ",real," ",aprox,"  ",error,"  %\n")
+}
+cat("\n\n")
+cat("xi      ","tan(x)       ","poly7         ","error        \n")
+for(i in c(2:20)){
+  real=tan(xi2[i])
+  aprox=polyAjuste(xi2[i])
+  error=(abs(real-aprox)/abs(real))*100
+  cat(xi2[i]," ",real," ",aprox,"  ",error,"  %\n")
+}
+# El error máximo observador en la tabla de valores graficados es de 5.024*10^14 %, que es cuando la función se acerca al valor indeterminado y es cuando se genera mayor error
+# debido a que dichos puntos al alejarse del comportamiento promedio generan mayor error y es donde se presenta efectivamente el mayor error como se observa en la tabla.
+
+#Se calculan errores con el polinomio de 7 puntos para explicación futura
+```
+
+
+Parte D) Determine el α que minimice el error máximo. Explicar el procedimiento seguido en su determinación, y demuestre su resultado.
+
+Para nodos igualmente espaciados en una interpolación polinomial, el error tiene una cota. Dicha cota está dada por la siguiente expresión:
+
+|R_n (x)|≤h^(n+1)/4(n+1) *M_n,donde M_n  es una constante,n es el número de nodos y h=(b-a)/n
+
+Dicha expresión se mostró en el punto 5 del taller. Si se grafica la ecuación de la cota sin tener en cuenta las constantes y solamente los coeficientes que varían, la gráfica sería la siguiente:
+
+ 
+Donde el eje X es n y el eje Y es el error. Luego cuando n->∞ el error máximo será el mínimo. Luego α->0 es el valor que debe tener para minimizar el error máximo de la interpolación polinomial, es decir las divisiones o particiones deben volverse de menor tamaño para minimizar el error máximo, es decir error->0. Esto se puede evidenciar en las tablas de errores calculadas en el punto C, donde se muestra que el polinomio calculado con 6 particiones del intervalo tiene mayor porcentaje de error en los puntos evaluados que el polinomio calculado con 150 particiones del intervalo.
