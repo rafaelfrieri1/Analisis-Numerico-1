@@ -1,0 +1,917 @@
+---
+title: "Reto interpolación de una mano"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+## Analisis Numerico 2019-1
+### Por Rafael Salvador Frieri Cabrera, Daniel Hamilton-Smith Santa Cruz,Laura Juliana Mora Páez
+##Introducción:
+Para afianzar los conocimientos adquiridos acerca de interpolación en la clase de Análisis Numérico se propuso una actividad a modo de reto para los estudiantes. Donde el reto consiste en el siguiente: “Construir un Interpolar (no necesariamente en forma polinómica) utilizando la  menor cantidad de puntos puntos k  y reproducir el dibujo completo de la mano (mejor exactitud) con la información dada en el script.” 
+
+El script contaba con las coordenadas (x,y) de 67 puntos, los cuales al unirse forman la silueta de una mano; estas coordenadas vienen en 2 vectores (x,y) separadas por comas de la siguiente manera:
+```{r}
+x=c(14.65, 14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 16.8, 15.4, 14.83, 14.4, 14.5, 15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3, 9.10, 8.6, 7.5, 7.0, 6.7, 6.6, 7.70, 8.00, 8.10, 8.40,9.20, 9.30, 10, 10.2, 10.3, 10.0, 9.50)                                                                                                       
+y=c(14.7, 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.20, 7.10, 6.70, 6.60, 6.80, 8.30, 8.80, 9.30, 8.80, 6.30, 5.50, 5.00, 4.70, 4.60, 4.50, 4.90, 5.40, 5.80, 6.90, 8.20, 7.60, 5.80, 4.50, 4.30, 3.90, 4.20, 5.70, 7.00, 7.90, 8.20, 7.30, 6.70, 5.50, 5.10, 4.60, 4.7, 5.0, 5.5, 7.2, 7.8, 8.60, 9.40, 10.0, 10.7, 9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 12.3, 12.5, 13.0,13.91, 14.9, 16, 16.4, 16.8, 10.7, 11.0)
+
+```
+
+Tras estos vectores en el script se encuentran dos instrucciones donde una nos menciona la cantidad de puntos y la otra sirve para graficar en R:
+
+```{r}
+length(x)
+plot(x,y, pch=7, cex=0.5, col = "red", asp=1,xlab="X", ylab="Y", main="Diagrama ")
+```
+
+Tras ejecutar el script se obtiene la gráfica anterior.
+
+
+##Criterios
+
+1.   Metodología que explique como se seleccionaron k puntos con k<n con n el total de puntos dados(Selección "inteligente de los puntos")
+2. Algoritmo que se aplico(justificación) aplico por ejemplo,interpolación polinomica y como soluciono el sistema
+3. Validación del resultado
+
+##Productos
+
+1. Algoritmo,requerimientos,codificación
+2. 1Codificación, tabla donde esta la interpolación en los n-k puntos (no seleccionados), el polinomio o la función interpolante. En un plano los puntos originales, los utilizados y el contorno de la mano original y el interpolado(utilice el grosor minimo para la curva)
+2.2 Calcular la cota de error de su método con los datos experimentales y comparela con la cota teorica
+3.1 tabla donde esten los valores interpolados(tenga en cuenta los que no utilizo), los originales y el error relativo , calcule un error relativo total como la suma de los errores relativos 
+3.2 cree una funcion que cuente el numero aciertos y el numero de diferencias en una cifra entre su función de interpolacion y los originales y implementelo como 
+el índice de Jaccard 
+4. Cree una función que muestre la eficiencia de su metodo
+
+##Preguntas
+
+¿El origen se puede modificar? Si tenemos nueva información (nodos) ¿como podemos implementar esa información en el algoritmo de interpolación?
+¿Su método es robusto, en el sentido que si se tienen más puntos la exactitud no disminuye?
+Si la información adicional o suponga tiene la información de otra mano con más cifras significativas ¿como se comporta su algoritmo ? ¿la exactitud decae?
+
+##Solución del Reto
+El algoritmo implementado tiene como objetivos encontrar K puntos para formar n cantidad de segmentos donde el error sea mínimo entre la función interpolada y los puntos de vector original, minimizando la cantidad de puntos utilizados, al igual que graficar estos segmentos para obtener la silueta de una mano. 
+
+Para cumplir con el objetivo se contemplaron varias opciones, como por ejemplo sacar el promedio entre cada par de puntos y así reducir la cantidad de puntos utilizados hasta la mitad, sin embargo esta posibilidad fue descartada debido al error apreciable que se presentaba en algunos segmentos de la silueta, por otro lado se consideró la posibilidad de dividir la mano en fragmentos para luego unirla. Otra opción contemplada se basó en invertir los puntos de la mano para obtener la interpolación de la mano rotada y luego devolverla a su estado inicial, sin embargo se descartó por la complejidad que presentaba este algoritmo, sin tener un efecto apreciable en la optimización del uso de puntos. Sin embargo para todas las versiones se requeria que se ordenaran los puntos de la siguiente manera:
+
+Puntos ordenados
+```{r}
+x = c(14.65, 14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 
+  16.8, 15.4, 14.83, 14.4, 14.5, 
+  15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 
+  13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 
+  10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3,  10.0, 9.5, 
+  8.6, 7.5, 7.0, 6.7, 6.6, 7.7, 
+  8.0, 8.1, 8.4, 9.2, 9.3, 10, 10.2, 10.3)
+
+y = c(14.7, 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.2, 7.1, 6.7, 6.6, 
+  6.8, 8.3, 8.8, 9.3, 8.8, 
+  6.3, 5.5, 5.0, 4.7, 4.6, 4.5, 4.9, 5.4, 5.8, 6.9, 8.2, 7.6, 
+  5.8, 4.5, 4.3, 3.9, 4.2, 5.7, 7.0, 7.9, 8.2, 7.3, 
+  6.7, 5.5, 5.1, 4.6, 4.7, 5.0, 5.5, 7.2, 7.8, 8.6, 9.4, 10.0,  10.7, 11.0, 
+  9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 
+  12.3, 12.5, 13.0, 13.91, 14.9, 16, 16.4, 16.8)
+```
+
+
+Las diferentes versiónes del código se presentaran acontinuación con sus respectivas soluciones a la mano.
+
+###Versión 1:
+
+A continuación se presenta la primera versión que se tuvo del código donde se utilizaba el método de lagrange, esta versión fue descartada debido a que a pesar de que solo se utilizaran 15 puntos a la hora de gráficar las curvas no generaban una mano, si no como se puede observar quedaban una sobre otra o con una dirección diferente a la esperada, sin embargo podemos observar que podemos tener algo cercano a el dedo meñique.  
+Para el calculo de cuales puntos se van a utilizar se tomo la decisión de dividir en 7 secciones el vector con todos los puntos y de estas secciones sacar al rededor de 3 puntos.
+A continuación se presenta el código con las diferentes salidas que este presentaba y la gráfica de como quedaba la mano. 
+
+```{r}
+rm(list=ls())
+
+graf <- function(arr1,arr2, color)
+{
+  points(arr1,arr2, pch=7, cex=0.5, col = color, asp=1,xlab="X", ylab="Y", main="Diagrama ")
+}
+
+lagrange<- function(eval, lis, lisy )
+{
+  ret1 <- ( eval - lis[2] ) / ( lis[1] - lis[2] ) * ( eval - lis[3] ) / ( lis[1] - lis[3] ) * lisy[1]
+  
+  ret2 <- ( eval - lis[1] ) / ( lis[2] - lis[1] ) * ( eval - lis[3] ) / ( lis[2] - lis[3] ) * lisy[2]
+  
+  ret3 <- ( eval - lis[1] ) / ( lis[3] - lis[1] ) * ( eval - lis[2] ) / ( lis[3] - lis[2] ) * lisy[3]
+  
+  return (ret1 + ret2 + ret3)
+}
+
+lag<- function(eval, lis, lisy )
+{ 
+  tot <- 0
+  for( j in 1:(length(lis) ) )
+  {
+    val <- lisy[j]
+    for( i in 1:length(lis)  )
+    {
+      if ( i != j)
+      {
+        nn <- ( eval - lis[i] ) / ( lis[j] - lis[i] )
+        val <- val * nn
+      }
+    }
+    tot <- tot + val
+  }
+  return(tot)
+}
+
+# esto, dada una lista, encuentra los 3 mejores puntos para lagrange, tomando los dos extremos y alguno intermedio
+findMin <- function(lisx, lisy, liminf, limsup)
+{
+  print("------------------------------------------------------")
+  print(lisx)
+  cat(liminf,"  ",limsup,"\n")
+  print(lisx[liminf:limsup])
+  errmin <- 0
+  pt <- 0
+  prim <- TRUE
+  for( i in liminf:limsup) ## se evitan los dos extremos
+  {
+    
+    cat("-----------------------\n")
+    
+    valx <- lisx[liminf]
+    valx <- c(valx, lisx[i])
+    valx <- c(valx, lisx[limsup] )
+    
+    valy <- lisy[liminf]
+    valy <- c(valy,lisy[i])
+    valy <- c(valy, lisy[limsup] )
+    
+    sumerr <- 0    
+    for( j in liminf:limsup )
+    {
+      sumerr <- sumerr + abs( lagrange(lisx[j],valx , valy ) - lisx[j])
+    }
+    
+    cat(i," en pos ", sumerr,"\n")
+    
+    if ( !is.nan(sumerr) && ( prim || sumerr < errmin ) )
+    {
+      errmin = sumerr
+      print(errmin)
+      sumerr = 2
+      print(errmin)
+      pt = i 
+      prim = FALSE
+    }
+    
+    
+  }
+  cat ("final : ",errmin ,"    ",pt,"\n")
+  print("datos : ")
+  nx = c(lisx[liminf], lisx[pt] , lisx[limsup]  )
+  ny = c(lisy[liminf], lisy[pt] , lisy[limsup]  )
+  
+  valx <- lisx[liminf]
+  valx <- c(valx, lisx[pt])
+  valx <- c(valx, lisx[limsup] )
+  
+  valy <- lisy[liminf]
+  valy <- c(valy,lisy[pt])
+  valy <- c(valy, lisy[limsup] )
+
+  eqn = function(eval){ lagrange(eval,nx , ny ) }
+  graf(nx,ny,"red")
+  
+  
+  eqn = function(eval){ lagrange(eval,nx , ny ) }
+  
+  curve(eqn, from=lisx[liminf], to=lisx[limsup],add=TRUE, col = "red")
+  
+}
+
+
+# reorganizacion de datos 
+x = c(14.65, 14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 
+  16.8, 15.4, 14.83, 14.4, 14.5, 
+  15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 
+  13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 
+  10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3,  10.0, 9.5, 
+  8.6, 7.5, 7.0, 6.7, 6.6, 7.7, 
+  8.0, 8.1, 8.4, 9.2, 9.3, 10, 10.2, 10.3)
+
+y = c(14.7, 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.2, 7.1, 6.7, 6.6, 
+  6.8, 8.3, 8.8, 9.3, 8.8, 
+  6.3, 5.5, 5.0, 4.7, 4.6, 4.5, 4.9, 5.4, 5.8, 6.9, 8.2, 7.6, 
+  5.8, 4.5, 4.3, 3.9, 4.2, 5.7, 7.0, 7.9, 8.2, 7.3, 
+  6.7, 5.5, 5.1, 4.6, 4.7, 5.0, 5.5, 7.2, 7.8, 8.6, 9.4, 10.0,  10.7, 11.0, 
+  9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 
+  12.3, 12.5, 13.0, 13.91, 14.9, 16, 16.4, 16.8)
+
+plot(x,y,type="l",asp=1)
+## de cada uno de estos cortes deberian terminar quedando unos 3 puntos 
+c1 = 10
+c2 = 15
+c3 = 27
+c4 = 37
+c5 = 50
+c6 = 56
+c7 = length(x)
+
+print("1")
+findMin(x,y,1,c1)
+print("2")
+(findMin(x,y,c1,c2) )
+print("3")
+(findMin(x,y,c2,c3) )
+print("4")
+(findMin(x,y,c3,c4) ) 
+print("5")
+(findMin(x,y,c4,c5) )
+print("6")
+(findMin(x,y,c5,c6) )
+print("7")
+(findMin(x,y,c6,c7) )
+print("8")
+
+```
+
+###Versión 2
+
+Para esta versión se sigue manejando una metodologia de lagrange y la forma de obtener los puntos sigue siendo similar a la anterior versión, sin embargo para esta se generan más curvas de las necesarias y la mayoría de estas curvas ya tienen una amplitud negativa, es por esto que tienen la dirección deseada.
+
+```{r}
+rm(list=ls())
+
+graf <- function(arr1,arr2, color)
+{
+  points(arr1,arr2, pch=7, cex=0.5, col = color, asp=1,xlab="X", ylab="Y", main="Diagrama ")
+}
+
+lagrange<- function(eval, lis, lisy )
+{
+  ret1 <- ( eval - lis[2] ) / ( lis[1] - lis[2] ) * ( eval - lis[3] ) / ( lis[1] - lis[3] ) * lisy[1]
+  
+  ret2 <- ( eval - lis[1] ) / ( lis[2] - lis[1] ) * ( eval - lis[3] ) / ( lis[2] - lis[3] ) * lisy[2]
+  
+  ret3 <- ( eval - lis[1] ) / ( lis[3] - lis[1] ) * ( eval - lis[2] ) / ( lis[3] - lis[2] ) * lisy[3]
+  
+  return (ret1 + ret2 + ret3)
+}
+
+lag<- function(eval, lis, lisy )
+{ 
+  tot <- 0
+  for( j in 1:(length(lis) ) )
+  {
+    val <- lisy[j]
+    for( i in 1:length(lis)  )
+    {
+      if ( i != j)
+      {
+        nn <- ( eval - lis[i] ) / ( lis[j] - lis[i] )
+        val <- val * nn
+      }
+    }
+    tot <- tot + val
+  }
+  return(tot)
+}
+
+# esto, dada una lista, encuentra los 3 mejores puntos para lagrange, tomando los dos extremos y alguno intermedio
+findMin <- function(lisx, lisy, liminf, limsup)
+{
+  print("------------------------------------------------------")
+  print(lisx)
+  cat(liminf,"  ",limsup,"\n")
+  print(lisx[liminf:limsup])
+  errmin <- 0
+  pt <- 0
+  prim <- TRUE
+  
+  metodo <- "natural"
+  for( i in liminf:limsup) ## se evitan los dos extremos
+  {
+    cat("-----------------------\n")
+    
+    valx <- lisx[liminf]
+    valx <- c(valx, lisx[i])
+    valx <- c(valx, lisx[limsup] )
+    
+    valy <- lisy[liminf]
+    valy <- c(valy,lisy[i])
+    valy <- c(valy, lisy[limsup] )
+    
+    nx = c( lisx[liminf], lisx[pt] , lisx[limsup]  )
+    ny = c( lisy[liminf], lisy[pt] , lisy[limsup]  )
+    
+    sumerr <- 0    
+    
+    ttam <- limsup - liminf
+    print(valx)
+    print(valy)
+    ret <- (spline(valx, valy, n = ttam ,method = metodo) )
+    
+    lines(spline(valx, valy, n = ttam, method = metodo), col = 3)
+    
+    rx <- ret$x
+    ry <- ret$y
+    
+    for( j in 1:ttam )
+    {
+      sumerr <- sumerr + abs( lisy[liminf + j] -  ry[j] ) 
+    }
+    if ( !is.nan(sumerr) && ( prim || sumerr < errmin ) )
+    {
+      errmin = sumerr
+      sumerr = 2
+      pt = i 
+      prim = FALSE
+    }
+  }
+  cat ("final : ",errmin ,"    ",pt,"\n")
+  
+  nx = c( lisx[liminf], lisx[pt] , lisx[limsup]  )
+  ny = c( lisy[liminf], lisy[pt] , lisy[limsup]  )
+  lines(spline(nx, ny, n = 201,method = metodo), col = 2)
+}
+
+# reorganizacion de datos 
+x = c(14.65, 14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 
+  16.8, 15.4, 14.83, 14.4, 14.5, 
+  15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 
+  13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 
+  10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3,  10.0, 9.5, 
+  8.6, 7.5, 7.0, 6.7, 6.6, 7.7, 
+  8.0, 8.1, 8.4, 9.2, 9.3, 10, 10.2, 10.3)
+
+y = c(14.7, 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.2, 7.1, 6.7, 6.6, 
+  6.8, 8.3, 8.8, 9.3, 8.8, 
+  6.3, 5.5, 5.0, 4.7, 4.6, 4.5, 4.9, 5.4, 5.8, 6.9, 8.2, 7.6, 
+  5.8, 4.5, 4.3, 3.9, 4.2, 5.7, 7.0, 7.9, 8.2, 7.3, 
+  6.7, 5.5, 5.1, 4.6, 4.7, 5.0, 5.5, 7.2, 7.8, 8.6, 9.4, 10.0,  10.7, 11.0, 
+  9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 
+  12.3, 12.5, 13.0, 13.91, 14.9, 16, 16.4, 16.8)
+
+
+plot(x,y,type="l",asp=1)
+## de cada uno de estos cortes deberian terminar quedando unos 3 puntos 
+c1 = 9
+c2 = 15
+c3 = 27
+c4 = 37
+c5 = 52
+c6 = 56
+c7 = length(x)
+
+print("1")
+findMin(x,y,1,c1)
+print("2")
+(findMin(x,y,c1,c2) )
+print("3")
+(findMin(x,y,c2,c3) )
+print("4")
+(findMin(x,y,c3,c4) ) 
+print("5")
+(findMin(x,y,c4,c5) )
+print("6")
+(findMin(x,y,c5,c6) )
+print("7")
+(findMin(x,y,c6,c7) )
+print("8")
+
+```
+###Versión final 
+
+Para esta versión se tomó la decisión de utilizar un algoritmo que tomará un punto del vector original y realizará segmentos hacia diferentes puntos del vector original, estos segmentos se calcularon bajo el funcionamiento de interpolación por spline, con base en esos segmentos calculará el error respecto al segmento original y finalmente se quedará con el segmento que presenta el error mínimo entre los segmentos obtenidos; tras obtener un segmento el punto de partida para la búsqueda de los próximos segmentos es el punto de cierre del segmento inmediatamente anterior.
+
+Debido a la cantidad de comparaciones que realiza el sistema, el algoritmo presenta un tiempo relativamente elevado para encontrar la solucion.
+
+```{r}
+rm(list=ls())
+
+metodo <- "fmm"  # metodos : ("fmm","natural","periodic") 
+
+graf <- function(arr1,arr2, color)
+{
+  points(arr1,arr2, pch=7, cex=0.5, col = color, asp=1,xlab="X", ylab="Y", main="Diagrama ")
+}
+
+# esto, dada una lista, encuentra los 3 mejores puntos para lagrange, tomando los dos extremos y alguno intermedio
+findMin <- function(lisx, lisy, liminf, limsup)
+{
+  errmin <- 0
+  pt     <- 0
+  prim   <- TRUE
+  intersec  <- 0
+  bstintrsc <- 0
+  
+  for( i in liminf:limsup)
+  {
+    valx <-          lisx[liminf]
+    valx <- c( valx, lisx[i] )
+    valx <- c( valx, lisx[limsup] )
+    
+    valy <-          lisy[liminf]
+    valy <- c( valy, lisy[i] )
+    valy <- c( valy, lisy[limsup] )
+    
+    sumerr <- 0    
+    
+    ttam <- limsup - liminf
+    ret  <- spline( valx , valy , n = ttam , method = metodo)
+    ry   <- ret$y
+    
+    intersec <- 0
+    
+    #lines(spline(valx, valy, n = ttam, method = metodo), col = 3)
+    
+    for( j in 1:ttam )
+    {
+      if (lisy[ liminf + j ] ==  ry[ j ])
+      {
+        intersec <- intersec + 1
+        #cat (lisy[ liminf + j ]  ,"-----",  ry[ j ],"\n")
+      }
+      sumerr <- sumerr + abs( lisy[ liminf + j ] -  ry[ j ] ) 
+    }
+    if ( !is.nan( sumerr ) && ( prim || sumerr < errmin ) )
+    {
+      errmin <- sumerr
+      pt     <- i 
+      prim   <- FALSE
+      bstintrsc <- intersec
+    }
+  }
+  #cat("best intersectioon : " , bstintrsc," \n")
+  #cat ("final : ",errmin ,"    ",pt,"\n")
+  return( c(pt,errmin,bstintrsc) )
+}
+
+puntos <- function(x,y)
+{
+  totintersect <- 0
+  increm <- 1.4
+  errorinicial  <- 1
+  erroraceptado <- errorinicial
+  puntos <- c(1)
+  top    <- 1 
+  min    <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, puntos intersectantes 
+  i      <- 3
+  prim   <- TRUE
+  len    <- 0 # longitud del tramo actual 
+  
+  while ( top != length(x) )
+  {
+    if ( i - top >= 1)
+    {
+      ret <- findMin(x,y,top,i) 
+      
+      if ( abs(min[4] - ret[2]) <= erroraceptado || prim) # si se encuentran otros valores que minimicen el error, se guardan. o si es el primer valor revisado
+      {
+        min <- c( top ,ret[1], i, ret[2],ret[3])
+        prim = FALSE
+        erroraceptado <- erroraceptado + increm*(len/length(x)) # para darle mas 
+        len <- 1 # se reinicia la longitud actual 
+      }
+      else
+      {
+        len <- len + 1 # aumenta la longitud del tramo actual
+      }
+      
+      if ( i >= length(x) )
+      {
+        nx <- c( x[ min[1] ], x[ min[2] ] , x[ min[3] ] )
+        ny <- c( y[ min[1] ], y[ min[2] ] , y[ min[3] ] )
+        lines(spline(nx, ny, n = 200, method = metodo ), col = 2)
+        
+        erroraceptado <- errorinicial # reiniciar el error aceptado
+        
+        cat("desde : ",min[1],"\tpunto medio : ",min[2], "\thasta : ",min[3], "\tpuntos intersectantes : ",min[5],"\terror segmento : ",min[4],"\n")
+        totintersect <- totintersect + min[5]
+        if ( min[2] == puntos[ length( puntos ) ] ) 
+        {
+          puntos <- c( puntos,min[ 3 ] ) # min[1] en teoria es el ultimo de los anteriores, entonces ya esta 
+        }
+        else
+        {
+          puntos <- c( puntos,min[ 2:3 ] )
+        }
+        
+        top <- min[3]
+        i   <- top
+        
+        min  <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, interseccion
+        prim <- TRUE
+      }
+      else 
+      {
+        i <- i + 1  
+      }
+    }
+    else 
+    {
+      i <- i + 1  
+    }
+    
+    if ( i >= length(x) ) # por si acaso :v 
+    {
+      i <- length(x)
+    }
+  }
+  cat("\n\ncantidad : ",length(puntos),"\tindice de Jaccard : ",totintersect/length(x),"\npuntos seleccionados : ",puntos,"\n")
+}
+
+# reorganizacion de datos 
+x = c(14.65, 14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 
+  16.8, 15.4, 14.83, 14.4, 14.5, 
+  15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 
+  13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 
+  10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3,  10.0, 9.5, 
+  8.6, 7.5, 7.0, 6.7, 6.6, 7.7, 
+  8.0, 8.1, 8.4, 9.2, 9.3, 10, 10.2, 10.3)
+
+y = c(14.7, 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.2, 7.1, 6.7, 6.6, 
+  6.8, 8.3, 8.8, 9.3, 8.8, 
+  6.3, 5.5, 5.0, 4.7, 4.6, 4.5, 4.9, 5.4, 5.8, 6.9, 8.2, 7.6, 
+  5.8, 4.5, 4.3, 3.9, 4.2, 5.7, 7.0, 7.9, 8.2, 7.3, 
+  6.7, 5.5, 5.1, 4.6, 4.7, 5.0, 5.5, 7.2, 7.8, 8.6, 9.4, 10.0,  10.7, 11.0, 
+  9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 
+  12.3, 12.5, 13.0, 13.91, 14.9, 16, 16.4, 16.8)
+
+
+plot(x,y,type="l",asp=1,main="Mano")
+
+puntos(x,y)
+
+```
+
+Sin embargo a pesar de que la versión final se presentarón 30 puntos, aun se ven algunas anomalias, es por esto que se plantea una variación al algoritmo presentado anteriormente para que en el caso donde se empieza a generar el primer lado de la mano se realizara un pequeño giro donde y pasa a ser x y x pasa a ser y debido a que en ese sector no se presenta una función y es por eso que se presenta la anomalia.
+A continuación se muestra el algoritmo 
+```{r}
+
+rm(list=ls())
+
+metodo <- "fmm"  # metodos : ("fmm","natural","periodic") 
+
+graf <- function(arr1,arr2, color)
+{
+  points(arr1,arr2, pch=7, cex=0.5, col = color, asp=1,xlab="X", ylab="Y", main="Diagrama ")
+}
+
+# esto, dadas dos listas, encuentra los 3 mejores puntos para spline, tomando los dos extremos y alguno intermedio
+findMin <- function(lisx, lisy, liminf, limsup)
+{
+  errmin <- 0
+  pt     <- 0
+  prim   <- TRUE
+  intersec  <- 0
+  bstintrsc <- 0
+  
+  for( i in liminf:limsup)
+  {
+    valx <-          lisx[liminf]
+    valx <- c( valx, lisx[i] )
+    valx <- c( valx, lisx[limsup] )
+    
+    valy <-          lisy[liminf]
+    valy <- c( valy, lisy[i] )
+    valy <- c( valy, lisy[limsup] )
+    
+    sumerr <- 0    
+    
+    ttam <- limsup - liminf
+    ret  <- spline( valx , valy , n = ttam , method = metodo)
+    ry   <- ret$y
+    
+    intersec <- 0
+    
+    #lines(spline(valx, valy, n = ttam, method = metodo), col = 3)
+    
+    for( j in 1:ttam )
+    {
+      if (lisy[ liminf + j ] ==  ry[ j ])
+      {
+        intersec <- intersec + 1
+      }
+      sumerr <- sumerr + abs( lisy[ liminf + j ] -  ry[ j ] ) 
+    }
+    if ( !is.nan( sumerr ) && ( prim || sumerr < errmin ) )
+    {
+      errmin <- sumerr
+      pt     <- i 
+      prim   <- FALSE
+      bstintrsc <- intersec
+    }
+  }
+  return( c(pt,errmin,bstintrsc) )
+}
+
+puntos <- function(x,y)
+{
+  totintersect <- 0
+  increm <- 1.4
+  errorinicial   <- 1
+  erroraceptado  <- errorinicial
+  erroraceptadoy <- errorinicial
+  
+  min    <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, puntos intersectantes 
+  miny    <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, puntos intersectantes 
+  
+  i      <- 1
+  puntos <- c(1)
+  top    <- 1 
+  
+  prim   <- TRUE
+  len    <- 0 # longitud del tramo actual 
+  
+  primy   <- TRUE
+  leny    <- 0 # longitud del tramo actual 
+  
+  while ( top != length(x) )
+  {
+    if ( i - top >= 1)
+    {
+      ret <- findMin(x,y,top,i) 
+      rety <- findMin(y,x,top,i) 
+      
+      if ( abs(min[4] - ret[2]) <= erroraceptado || prim) # si se encuentran otros valores que minimicen el error, se guardan. o si es el primer valor revisado
+      {
+        min <- c( top ,ret[1], i, ret[2],ret[3])
+        prim = FALSE
+        erroraceptado <- erroraceptado + increm*(len/length(x)) # para darle mas 
+        len <- 1 # se reinicia la longitud actual 
+      }
+      else
+      {
+        len <- len + 1 # aumenta la longitud del tramo actual
+      }
+      
+      if (abs(miny[4] - rety[2]) <= erroraceptadoy || primy) # si se encuentran otros valores que minimicen el error, se guardan. o si es el primer valor revisado
+      {
+        miny <- c( top ,rety[1], i, rety[2],rety[3])
+        primy = FALSE
+        erroraceptadoy <- erroraceptadoy + increm*(len/length(x)) # para darle mas 
+        leny <- 1 # se reinicia la longitud actual 
+      }
+      else
+      {
+        leny <- len + 1 # aumenta la longitud del tramo actual
+      }
+      
+      if ( i >= length(x) )
+      {
+        #cat ("\n\n\n",min,"      ",miny ,"\n")
+        
+        if (miny[4] + (leny/length(x)) < min[4])
+        {
+          cat("y ")
+          min <- miny
+          color <- 3
+        }
+        else
+        {
+          cat("x ")
+          color <- 2
+        }
+        
+        nx <- c( x[ min[1] ], x[ min[2] ] , x[ min[3] ] )
+        ny <- c( y[ min[1] ], y[ min[2] ] , y[ min[3] ] )
+        lines(spline(nx, ny, n = 200, method = metodo ), col = color)
+        
+        erroraceptado  <- errorinicial # reiniciar el error aceptado
+        erroraceptadoy <- errorinicial 
+        
+        cat("desde : ",min[1],"\tpunto medio : ",min[2], "\thasta : ",min[3], "\tpuntos intersectantes : ",min[5],"\terror segmento : ",min[4],"\n")
+        totintersect <- totintersect + min[5]
+        if ( min[2] == puntos[ length( puntos ) ] ) 
+        {
+          puntos <- c( puntos,min[ 3 ] ) # min[1] en teoria es el ultimo de los anteriores, entonces ya esta 
+        }
+        else
+        {
+          puntos <- c( puntos,min[ 2:3 ] )
+        }
+        
+        top <- min[3]
+        i   <- top
+        
+        min  <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, interseccion
+        prim <- TRUE
+        
+
+        
+      }
+      else 
+      {
+        i <- i + 1  
+      }
+    }
+    else 
+    {
+      i <- i + 1  
+    }
+    
+    if ( i >= length(x) ) # por si acaso :v 
+    {
+      i <- length(x)
+    }
+  }
+  cat("\n\ncantidad : ",length(puntos),"\tindice de Jaccard : ",totintersect/length(x),"\npuntos seleccionados : ",puntos,"\n")
+}
+
+
+# reorganizacion de datos 
+x = c(14.65, 14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 
+      16.8, 15.4, 14.83, 14.4, 14.5, 
+      15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 
+      13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 
+      10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3,  10.0, 9.5, 
+      8.6, 7.5, 7.0, 6.7, 6.6, 7.7, 
+      8.0, 8.1, 8.4, 9.2, 9.3, 10, 10.2, 10.3)
+
+y = c(14.7, 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.2, 7.1, 6.7, 6.6, 
+      6.8, 8.3, 8.8, 9.3, 8.8, 
+      6.3, 5.5, 5.0, 4.7, 4.6, 4.5, 4.9, 5.4, 5.8, 6.9, 8.2, 7.6, 
+      5.8, 4.5, 4.3, 3.9, 4.2, 5.7, 7.0, 7.9, 8.2, 7.3, 
+      6.7, 5.5, 5.1, 4.6, 4.7, 5.0, 5.5, 7.2, 7.8, 8.6, 9.4, 10.0,  10.7, 11.0, 
+      9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 
+      12.3, 12.5, 13.0, 13.91, 14.9, 16, 16.4, 16.8)
+
+
+plot(x,y,type="l",asp=1,main="Mano")
+
+puntos(x,y)
+```
+
+Como se puede observar en la gráfica se tiene un tramo de color verde, este tramo presenta la variación de x y y mencionada anteriormente; por otro lado este algoritmo termina con 35 puntos utilizados, a diferencia del anterior utiliza 5 más por la variación 
+
+##Solución preguntas
+
+-¿El origen se puede modificar? Si tenemos nueva información (nodos) ¿como podemos implementar esa información en el algoritmo de interpolación?  
+Debido a que el método utilizado se basa en ir verificando errores entre los diferentes puntos que se encuentran en el vector inicial y el spline calculado, es decir no depende del origen, al cambiar el valor inicial o el origen el sistema solamente se vera afectado al inicio de la interpolación de la mano de resto no se verá afectado debido a que seguirá verificando errores con dicha función hasta encontrar el menor error y seguirá utilizando los segmentos de menor error con los puntos que estos establezcan.
+
+Se puede observar con el siguiente ejemplo: 
+Si se quita el primer dato de la mano se genera una deformación en el dedo meñique (primer dedo que gráfica)
+
+```{r}
+rm(list=ls())
+
+metodo <- "fmm"  # metodos : ("fmm","natural","periodic") 
+
+graf <- function(arr1,arr2, color)
+{
+  points(arr1,arr2, pch=7, cex=0.5, col = color, asp=1,xlab="X", ylab="Y", main="Diagrama ")
+}
+
+# esto, dada una lista, encuentra los 3 mejores puntos para lagrange, tomando los dos extremos y alguno intermedio
+findMin <- function(lisx, lisy, liminf, limsup)
+{
+  errmin <- 0
+  pt     <- 0
+  prim   <- TRUE
+  intersec  <- 0
+  bstintrsc <- 0
+  
+  for( i in liminf:limsup)
+  {
+    valx <-          lisx[liminf]
+    valx <- c( valx, lisx[i] )
+    valx <- c( valx, lisx[limsup] )
+    
+    valy <-          lisy[liminf]
+    valy <- c( valy, lisy[i] )
+    valy <- c( valy, lisy[limsup] )
+    
+    sumerr <- 0    
+    
+    ttam <- limsup - liminf
+    ret  <- spline( valx , valy , n = ttam , method = metodo)
+    ry   <- ret$y
+    
+    intersec <- 0
+    
+    #lines(spline(valx, valy, n = ttam, method = metodo), col = 3)
+    
+    for( j in 1:ttam )
+    {
+      if (lisy[ liminf + j ] ==  ry[ j ])
+      {
+        intersec <- intersec + 1
+        #cat (lisy[ liminf + j ]  ,"-----",  ry[ j ],"\n")
+      }
+      sumerr <- sumerr + abs( lisy[ liminf + j ] -  ry[ j ] ) 
+    }
+    if ( !is.nan( sumerr ) && ( prim || sumerr < errmin ) )
+    {
+      errmin <- sumerr
+      pt     <- i 
+      prim   <- FALSE
+      bstintrsc <- intersec
+    }
+  }
+  return( c(pt,errmin,bstintrsc) )
+}
+
+puntos <- function(x,y)
+{
+  totintersect <- 0
+  increm <- 1.4
+  errorinicial  <- 1
+  erroraceptado <- errorinicial
+  puntos <- c(1)
+  top    <- 1 
+  min    <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, puntos intersectantes 
+  i      <- 3
+  prim   <- TRUE
+  len    <- 0 # longitud del tramo actual 
+  
+  while ( top != length(x) )
+  {
+    if ( i - top >= 1)
+    {
+      ret <- findMin(x,y,top,i) 
+      
+      if ( abs(min[4] - ret[2]) <= erroraceptado || prim) # si se encuentran otros valores que minimicen el error, se guardan. o si es el primer valor revisado
+      {
+        min <- c( top ,ret[1], i, ret[2],ret[3])
+        prim = FALSE
+        erroraceptado <- erroraceptado + increm*(len/length(x)) # para darle mas 
+        len <- 1 # se reinicia la longitud actual 
+      }
+      else
+      {
+        len <- len + 1 # aumenta la longitud del tramo actual
+      }
+      
+      if ( i >= length(x) )
+      {
+        nx <- c( x[ min[1] ], x[ min[2] ] , x[ min[3] ] )
+        ny <- c( y[ min[1] ], y[ min[2] ] , y[ min[3] ] )
+        lines(spline(nx, ny, n = 200, method = metodo ), col = 2)
+        
+        erroraceptado <- errorinicial # reiniciar el error aceptado
+        
+        cat("desde : ",min[1],"\tpunto medio : ",min[2], "\thasta : ",min[3], "\tpuntos intersectantes : ",min[5],"\terror segmento : ",min[4],"\n")
+        totintersect <- totintersect + min[5]
+        if ( min[2] == puntos[ length( puntos ) ] ) 
+        {
+          puntos <- c( puntos,min[ 3 ] ) # min[1] en teoria es el ultimo de los anteriores, entonces ya esta 
+        }
+        else
+        {
+          puntos <- c( puntos,min[ 2:3 ] )
+        }
+        
+        top <- min[3]
+        i   <- top
+        
+        min  <- c(Inf,Inf,Inf,Inf,Inf)# de, medio , hasta, valor, interseccion
+        prim <- TRUE
+      }
+      else 
+      {
+        i <- i + 1  
+      }
+    }
+    else 
+    {
+      i <- i + 1  
+    }
+    
+    if ( i >= length(x) ) # por si acaso :v 
+    {
+      i <- length(x)
+    }
+  }
+  cat("\n\ncantidad : ",length(puntos),"\tindice de Jaccard : ",totintersect/length(x),"\npuntos seleccionados : ",puntos,"\n")
+}
+
+# reorganizacion de datos 
+x = c(14.71, 14.6, 14.8, 15.2, 15.6, 15.7, 17.0, 17.6, 17.52, 17.3, 
+  16.8, 15.4, 14.83, 14.4, 14.5, 
+  15.0, 15.1, 15.0, 14.9, 14.6, 14.3, 14.0, 13.9, 13.8, 13.5, 13.1, 13.0, 
+  13.3, 13.2, 13.1, 12.9, 12.4, 11.9, 11.7, 11.6, 11.3, 10.9, 
+  10.7, 10.6, 10.6, 10.1, 9.7, 9.4, 9.3, 9.6, 9.9, 10.1, 10.2, 10.3,  10.0, 9.5, 
+  8.6, 7.5, 7.0, 6.7, 6.6, 7.7, 
+  8.0, 8.1, 8.4, 9.2, 9.3, 10, 10.2, 10.3)
+
+y = c( 14.33, 13.4, 12.33, 11.0, 10.5, 10.22, 8.2, 7.1, 6.7, 6.6, 
+  6.8, 8.3, 8.8, 9.3, 8.8, 
+  6.3, 5.5, 5.0, 4.7, 4.6, 4.5, 4.9, 5.4, 5.8, 6.9, 8.2, 7.6, 
+  5.8, 4.5, 4.3, 3.9, 4.2, 5.7, 7.0, 7.9, 8.2, 7.3, 
+  6.7, 5.5, 5.1, 4.6, 4.7, 5.0, 5.5, 7.2, 7.8, 8.6, 9.4, 10.0,  10.7, 11.0, 
+  9.9, 9.0, 9.1, 9.3, 9.7, 11.7, 
+  12.3, 12.5, 13.0, 13.91, 14.9, 16, 16.4, 16.8)
+
+
+plot(x,y,type="l",asp=1,main="Mano")
+
+puntos(x,y)
+```
+
+
+-¿Su método es robusto, en el sentido que si se tienen más puntos la exactitud no disminuye?
+Mientras los puntos que se presentan no sean considerados como ruido o datos inexactos, es decir sean puntos efectivamente que hacen parte de la mano, la exactitud del algoritmo es capaz de al menos mantenerse e inclusive, debido a los segmentos más cortos, llegará a ser más preciso.
+
+-Si la información adicional o suponga tiene la información de otra mano con más cifras significativas ¿como se comporta su algoritmo ? ¿la exactitud decae?
+Al haber mayor cantidad de cifras significativas, debido a que la aproximación hecha por el método utilizado a través de spline, ésta información de menor cantidad de cifras al ser comparada con valores de gran precisión podría no ser tan exacta, luego es posible que exista mayor error entre los puntos dados y los graficados con la aproximación del método.
+
+##Bibliografía:
+Para consultar el funcionamiento de spline se utilizó uno de los libros proporcionados por la profesora del curso, el cual fue: Introducción a los métodos numéricos por Walter Mora F.
